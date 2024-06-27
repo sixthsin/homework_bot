@@ -29,7 +29,6 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens() -> None:
     """Функция для проверки наличия переменных окружения."""
-
     if (
         PRACTICUM_TOKEN is None
         or TELEGRAM_TOKEN is None
@@ -43,7 +42,6 @@ def check_tokens() -> None:
 
 def send_message(bot, message) -> None:
     """Отправка сообщения пользователю."""
-
     try:
         logging.debug(f'Бот отправил сообщение {message}')
         bot.send_message(TELEGRAM_CHAT_ID, message)
@@ -54,7 +52,6 @@ def send_message(bot, message) -> None:
 
 def get_api_answer(timestamp: dict) -> Union[dict, str]:
     """Отправка запроса к API."""
-
     try:
         logging.info(f'Отправка запроса на {ENDPOINT} '
                      f'с параметрами {timestamp}')
@@ -70,7 +67,6 @@ def get_api_answer(timestamp: dict) -> Union[dict, str]:
 
 def check_response(response: dict) -> list:
     """Проверяет ответ API на соответствие документации."""
-
     if not isinstance(response, dict):
         message = 'Некорректный тип данных ответа.'
         logging.error(message)
@@ -91,7 +87,6 @@ def check_response(response: dict) -> list:
 
 def parse_status(homework: dict) -> str:
     """Получение информации о состоянии домашней работы."""
-
     if not homework.get('homework_name'):
         homework_name = 'Notnamed homework'
         message = 'Отсутствует имя домашней работы.'
@@ -117,7 +112,6 @@ def parse_status(homework: dict) -> str:
 
 def main():
     """Основная логика работы бота."""
-
     check_tokens()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
