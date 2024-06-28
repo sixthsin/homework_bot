@@ -69,7 +69,6 @@ def get_api_answer(timestamp: dict) -> Union[dict, str]:
 
 def check_response(response: dict) -> list:
     """Проверяет ответ API на соответствие документации."""
-
     if not isinstance(response, dict):
         message = 'Некорректный тип данных ответа.'
         logging.error(message)
