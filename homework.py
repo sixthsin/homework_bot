@@ -3,7 +3,7 @@ import os
 import time
 
 import requests
-import telegram
+from telebot import TeleBot
 from dotenv import load_dotenv
 from http import HTTPStatus
 from typing import Union
@@ -56,9 +56,11 @@ def get_api_answer(timestamp: dict) -> Union[dict, str]:
         logging.info(f'Отправка запроса на {ENDPOINT} '
                      f'с параметрами {timestamp}')
         response = requests.get(ENDPOINT, headers=HEADERS, params=timestamp)
+
         if response.status_code != HTTPStatus.OK:
             logging.error(f'Эндпоинт {response.url} недоступен. '
                           f'Код ответа: {response.status_code}')
+
     except requests.RequestException as error:
         logging.error(error)
 
@@ -67,6 +69,7 @@ def get_api_answer(timestamp: dict) -> Union[dict, str]:
 
 def check_response(response: dict) -> list:
     """Проверяет ответ API на соответствие документации."""
+
     if not isinstance(response, dict):
         message = 'Некорректный тип данных ответа.'
         logging.error(message)
@@ -102,6 +105,7 @@ def parse_status(homework: dict) -> str:
         logging.error(message)
 
     verdict = HOMEWORK_VERDICTS.get(status)
+
     if status not in HOMEWORK_VERDICTS:
         message = 'Неизвестный статус работы.'
         logging.error(message)
@@ -114,24 +118,36 @@ def main():
     """Основная логика работы бота."""
     check_tokens()
 
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    bot = TeleBot(token=TELEGRAM_TOKEN)
 
     while True:
         try:
+            old_status = ''
             timestamp = int(time.time())
             payload = {'from_date': timestamp}
             api_answer = get_api_answer(payload)
             checked_answer = check_response(api_answer)
 
-            for homework in checked_answer:
-                homework_status = parse_status(homework)
-                send_message(bot, homework_status)
+            if checked_answer:
+                status = parse_status(checked_answer[0])
+
+                if status != old_status:
+                    send_message(bot, status)
+                    status = old_status
+                    logging.info('Новое сообщение.')
+
+                else:
+                    logging.info('Ничего нового.')
+
+            else:
+                logging.debug('Статус не изменился.')
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logging.error(message)
 
-        time.sleep(RETRY_PERIOD)
+            logging.error(message)
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
