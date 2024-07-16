@@ -64,11 +64,12 @@ def get_api_answer(timestamp: int) -> Union[dict, str]:
         response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
 
     except requests.RequestException as error:
-        raise ConnectionError(f'Ошибка при запросе к API: {error}')
+        raise ConnectionError(f'Ошибка при отправке запроса к {ENDPOINT} '
+                              f'с параметрами {payload}: {error}')
 
     if response.status_code != HTTPStatus.OK:
-        raise ConnectionError(f'Эндпоинт {response.url} недоступен. '
-                              f'Код ответа: {response.status_code}')
+        raise ValueError(f'Эндпоинт {response.url} недоступен. '
+                         f'Код ответа: {response.status_code}')
 
     return response.json()
 
@@ -81,8 +82,8 @@ def check_response(response: dict) -> list:
 
     try:
         homeworks = response['homeworks']
-    except KeyError as error:
-        raise KeyError(f'Отсутствует ключ homeworks. {error}')
+    except KeyError:
+        raise KeyError('Отсутствует ключ homeworks.')
 
     if not isinstance(homeworks, list):
         raise TypeError(f'Ответ типа {type(homeworks)}. Ожидался тип list.')
@@ -98,19 +99,19 @@ def parse_status(homework: dict) -> str:
 
     try:
         homework_name = homework['homework_name']
-    except KeyError as error:
-        raise KeyError(f'Отсутствует ключ homework_name. {error}')
+    except KeyError:
+        raise KeyError('Отсутствует ключ homework_name.')
 
     try:
         status = homework['status']
-    except KeyError as error:
-        raise KeyError(f'Отсутстует ключ status. {error}')
+    except KeyError:
+        raise KeyError('Отсутстует ключ status.')
 
     try:
         verdict = HOMEWORK_VERDICTS[status]
-    except KeyError as error:
+    except KeyError:
         raise KeyError(f'Отсутствует ключ {status} '
-                       f'в HOMEWORK_VERDICTS. {error}')
+                       'в HOMEWORK_VERDICTS.')
 
     logging.debug('Статус домашней работы успешно проверен.')
 
@@ -133,15 +134,14 @@ def main():
             if checked_answer:
                 homework = checked_answer[0]
                 message = parse_status(homework)
-                if message != last_message:
-                    send_message(bot, message)
-                    last_message = message
-                    logging.info('Отправлено новое сообщение.')
+                send_message(bot, message)
+                last_message = message
+                logging.info('Отправлено новое сообщение.')
 
             else:
                 logging.debug('Статус не изменился.')
 
-            timestamp = api_answer.get('current_date')
+            timestamp = int(time.time())
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
